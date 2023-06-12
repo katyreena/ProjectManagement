@@ -54,8 +54,7 @@ public:
     {
 
         std::cout << "request:" << request.getURI()<< std::endl;
-        if (hasSubstr(request.getURI(),"/add") ||
-            hasSubstr(request.getURI(),"/remove")) 
+        if (hasSubstr(request.getURI(),"/add")) 
             return new CartHandler(_format);
         return 0;
     }

@@ -96,93 +96,52 @@ public:
         HTMLForm form(request, request.stream());
         try
         {
-            if (form.has("id_item") && form.has("login") && hasSubstr(request.getURI(), "/add"))
+            if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_POST)
             {
-                database::Cart cart;
-                cart.id_item() = stol(form.get("id_item"));
-                cart.login() = form.get("login");
-
-                bool check_result = true;
-                std::string message;
-                std::string reason;
-
-                if (!check_login(cart.get_login(), reason))
+                if (form.has("id_item") && form.has("login"))
                 {
-                    check_result = false;
-                    message += reason;
-                    message += "<br>";
-                }
+                    database::Cart cart;
+                    cart.id_item() = stol(form.get("id_item"));
+                    cart.login() = form.get("login");
 
-                if (!check_id(cart.get_id_item(), reason))
-                {
-                    check_result = false;
-                    message += reason;
-                    message += "<br>";
-                }
+                    bool check_result = true;
+                    std::string message;
+                    std::string reason;
 
-                if (check_result)
-                {
-                    database::Cart::add_item(cart);
-                    response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-                    response.setChunkedTransferEncoding(true);
-                    response.setContentType("application/json");
-                    std::ostream &ostr = response.send();
-                    ostr << cart.get_id_cart();
-                    return;
-                }
+                    if (!check_login(cart.get_login(), reason))
+                    {
+                        check_result = false;
+                        message += reason;
+                        message += "\n";
+                    }
 
-                else
-                {
-                    response.setStatus(Poco::Net::HTTPResponse::HTTP_NOT_FOUND);
-                    std::ostream &ostr = response.send();
-                    ostr << message;
-                    response.send();
-                    return;
-                }
+                    if (!check_id(cart.get_id_item(), reason))
+                    {
+                        check_result = false;
+                        message += reason;
+                        message += "\n";
+                    }
 
-            }
-            else if (form.has("id_item") && form.has("login") && hasSubstr(request.getURI(), "/remove"))
-            {
-                database::Cart cart;
-                cart.id_item() = stol(form.get("id_item"));
-                cart.login() = form.get("login");
+                    if (check_result)
+                    {
+                        database::Cart::add_item(cart);
+                        response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+                        response.setChunkedTransferEncoding(true);
+                        response.setContentType("application/json");
+                        std::ostream &ostr = response.send();
+                        ostr << cart.get_id_cart();
+                        return;
+                    }
 
-                bool check_result = true;
-                std::string message;
-                std::string reason;
+                    else
+                    {
+                        response.setStatus(Poco::Net::HTTPResponse::HTTP_NOT_FOUND);
+                        std::ostream &ostr = response.send();
+                        ostr << message;
+                        response.send();
+                        return;
+                    }
 
-                if (!check_login(cart.get_login(), reason))
-                {
-                    check_result = false;
-                    message += reason;
-                    message += "<br>";
-                }
-
-                if (!check_id(cart.get_id_item(), reason))
-                {
-                    check_result = false;
-                    message += reason;
-                    message += "<br>";
-                }
-
-                if (check_result)
-                {
-                    database::Cart::remove_item(cart);
-                    response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-                    response.setChunkedTransferEncoding(true);
-                    response.setContentType("application/json");
-                    std::ostream &ostr = response.send();
-                    ostr << cart.get_id_cart();
-                    return;
-                }
-
-                else
-                {
-                    response.setStatus(Poco::Net::HTTPResponse::HTTP_NOT_FOUND);
-                    std::ostream &ostr = response.send();
-                    ostr << message;
-                    response.send();
-                    return;
                 }
             }
         }
