@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.2)
 project(hl_server C CXX)
 
 SET (EXAMPLE_BINARY "ProjectManagement")
+SET (CART_SERVICE "cart_service")
+SET (ITEM_SERVICE "item_service")
 
 find_package(OpenSSL)
 find_package(Threads)
@@ -38,3 +40,39 @@ target_link_libraries(${EXAMPLE_BINARY} PRIVATE
                              "PocoDataMySQL"
                              "mysqlclient"
                              ZLIB::ZLIB)
+
+add_executable(${CART_SERVICE} cart_main.cpp 
+                             config/config.cpp 
+                             database/database.cpp
+                             database/cart.cpp)
+
+target_include_directories(${CART_SERVICE} PRIVATE "${CMAKE_BINARY_DIR}")
+target_compile_options(${CART_SERVICE} PRIVATE -Wall -Wextra -pedantic -Werror )
+set_target_properties(${CART_SERVICE} PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(${CART_SERVICE} PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+
+target_link_libraries(${CART_SERVICE} PRIVATE 
+                         ${CMAKE_THREAD_LIBS_INIT} 
+                         ${Poco_LIBRARIES}
+                         "PocoData"
+                         "PocoDataMySQL"
+                         "mysqlclient"
+                         ZLIB::ZLIB)
+
+add_executable(${ITEM_SERVICE} item_main.cpp 
+                         config/config.cpp 
+                         database/database.cpp
+                         database/item.cpp)
+
+target_include_directories(${ITEM_SERVICE} PRIVATE "${CMAKE_BINARY_DIR}")
+target_compile_options(${ITEM_SERVICE} PRIVATE -Wall -Wextra -pedantic -Werror )
+set_target_properties(${ITEM_SERVICE} PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(${ITEM_SERVICE} PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+
+target_link_libraries(${ITEM_SERVICE} PRIVATE 
+                     ${CMAKE_THREAD_LIBS_INIT} 
+                     ${Poco_LIBRARIES}
+                     "PocoData"
+                     "PocoDataMySQL"
+                     "mysqlclient"
+                     ZLIB::ZLIB)

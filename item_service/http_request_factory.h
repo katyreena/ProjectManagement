@@ -54,9 +54,10 @@ public:
     {
 
         std::cout << "request:" << request.getURI()<< std::endl;
-        if (hasSubstr(request.getURI(),"/user") ||
-            ) 
-            return new UserHandler(_format);
+        if (hasSubstr(request.getURI(),"/read_by_id") ||
+            hasSubstr(request.getURI(),"/read_all")||
+            hasSubstr(request.getURI(),"/search")) 
+            return new ItemHandler(_format);
         return 0;
     }
 

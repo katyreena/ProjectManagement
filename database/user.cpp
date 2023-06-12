@@ -18,7 +18,6 @@ using Poco::Data::Statement;
 
 namespace database
 {
-
     void User::init()
     {
         try
@@ -112,6 +111,7 @@ namespace database
         }
         return {};
     }
+    
     std::optional<User> User::read_by_id(long id)
     {
         try
@@ -141,9 +141,7 @@ namespace database
         }
         catch (Poco::Data::MySQL::StatementException &e)
         {
-
-            std::cout << "statement:" << e.what() << std::endl;
-            
+            std::cout << "statement:" << e.what() << std::endl; 
         }
         return {};
     }

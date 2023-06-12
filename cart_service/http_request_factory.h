@@ -54,9 +54,9 @@ public:
     {
 
         std::cout << "request:" << request.getURI()<< std::endl;
-        if (hasSubstr(request.getURI(),"/user") ||
-            ) 
-            return new UserHandler(_format);
+        if (hasSubstr(request.getURI(),"/add") ||
+            hasSubstr(request.getURI(),"/remove")) 
+            return new CartHandler(_format);
         return 0;
     }
 

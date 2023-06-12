@@ -43,8 +43,7 @@ using Poco::Util::OptionCallback;
 using Poco::Util::OptionSet;
 using Poco::Util::ServerApplication;
 
-#include "../../database/user.h"
-#include "../../user_service/helper.h"
+#include "../../database/cart.h"
 
 static bool hasSubstr(const std::string &str, const std::string &substr)
 {
@@ -61,65 +60,34 @@ static bool hasSubstr(const std::string &str, const std::string &substr)
     return false;
 }
 
-class UserHandler : public HTTPRequestHandler
+class CartHandler : public HTTPRequestHandler
 {
 private:
-    bool check_name(const std::string &name, std::string &reason)
+    bool check_login(const std::string &login, std::string &reason)
     {
-        if (name.length() < 3)
+        if (database::Cart::login_found(login) == false)
         {
-            reason = "Name must be at leas 3 signs";
-            return false;
-        }
-
-        if (name.find(' ') != std::string::npos)
-        {
-            reason = "Name can't contain spaces";
-            return false;
-        }
-
-        if (name.find('\t') != std::string::npos)
-        {
-            reason = "Name can't contain spaces";
+            reason = "User login not found";
             return false;
         }
 
         return true;
-    };
-
-    bool check_email(const std::string &email, std::string &reason)
-    {
-        if (email.find('@') == std::string::npos)
-        {
-            reason = "Email must contain @";
-            return false;
-        }
-
-        if (email.find(' ') != std::string::npos)
-        {
-            reason = "EMail can't contain spaces";
-            return false;
-        }
-
-        if (email.find('\t') != std::string::npos)
-        {
-            reason = "EMail can't contain spaces";
-            return false;
-        }
-
-        return true;
-    };
-
-public:
-    UserHandler(const std::string &format) : _format(format)
-    {
     }
 
-    Poco::JSON::Object::Ptr remove_password(Poco::JSON::Object::Ptr src)
+    bool check_id(const long id, std::string reason)
     {
-        if (src->has("password"))
-            src->set("password", "*******");
-        return src;
+        if (database::Cart::id_found(id) == false)
+        {
+            reason = "Item id not found";
+            return false;
+        }
+
+        return true;
+    }
+
+public:
+    CartHandler(const std::string &format) : _format(format)
+    {
     }
 
     void handleRequest(HTTPServerRequest &request,
@@ -128,151 +96,99 @@ public:
         HTMLForm form(request, request.stream());
         try
         {
-            if (form.has("id") && (request.getMethod() == Poco::Net::HTTPRequest::HTTP_GET))
+            if (form.has("id_item") && form.has("login") && hasSubstr(request.getURI(), "/add"))
             {
-                long id = atol(form.get("id").c_str());
+                database::Cart cart;
+                cart.id_item() = stol(form.get("id_item"));
+                cart.login() = form.get("login");
 
-                std::optional<database::User> result = database::User::read_by_id(id);
-                if (result)
+                bool check_result = true;
+                std::string message;
+                std::string reason;
+
+                if (!check_login(cart.get_login(), reason))
                 {
+                    check_result = false;
+                    message += reason;
+                    message += "<br>";
+                }
+
+                if (!check_id(cart.get_id_item(), reason))
+                {
+                    check_result = false;
+                    message += reason;
+                    message += "<br>";
+                }
+
+                if (check_result)
+                {
+                    database::Cart::add_item(cart);
                     response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
                     response.setChunkedTransferEncoding(true);
                     response.setContentType("application/json");
                     std::ostream &ostr = response.send();
-                    Poco::JSON::Stringifier::stringify(remove_password(result->toJSON()), ostr);
+                    ostr << cart.get_id_cart();
                     return;
                 }
+
                 else
                 {
-                    response.setStatus(Poco::Net::HTTPResponse::HTTPStatus::HTTP_NOT_FOUND);
-                    response.setChunkedTransferEncoding(true);
-                    response.setContentType("application/json");
-                    Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
-                    root->set("type", "/errors/not_found");
-                    root->set("title", "Internal exception");
-                    root->set("status", "404");
-                    root->set("detail", "user ot found");
-                    root->set("instance", "/user");
+                    response.setStatus(Poco::Net::HTTPResponse::HTTP_NOT_FOUND);
                     std::ostream &ostr = response.send();
-                    Poco::JSON::Stringifier::stringify(root, ostr);
+                    ostr << message;
+                    response.send();
                     return;
                 }
+
             }
-            else if (hasSubstr(request.getURI(), "/auth"))
+            else if (form.has("id_item") && form.has("login") && hasSubstr(request.getURI(), "/remove"))
             {
+                database::Cart cart;
+                cart.id_item() = stol(form.get("id_item"));
+                cart.login() = form.get("login");
 
-                std::string scheme;
-                std::string info;
-                request.getCredentials(scheme, info);
-                std::cout << "scheme: " << scheme << " identity: " << info << std::endl;
+                bool check_result = true;
+                std::string message;
+                std::string reason;
 
-                std::string login, password;
-                if (scheme == "Basic")
+                if (!check_login(cart.get_login(), reason))
                 {
-                    get_identity(info, login, password);
-                    if (auto id = database::User::auth(login, password))
-                    {
-                        response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-                        response.setChunkedTransferEncoding(true);
-                        response.setContentType("application/json");
-                        std::ostream &ostr = response.send();
-                        ostr << "{ \"id\" : \"" << *id << "\"}" << std::endl;
-                        return;
-                    }
+                    check_result = false;
+                    message += reason;
+                    message += "<br>";
                 }
 
-                response.setStatus(Poco::Net::HTTPResponse::HTTPStatus::HTTP_UNAUTHORIZED);
-                response.setChunkedTransferEncoding(true);
-                response.setContentType("application/json");
-                Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
-                root->set("type", "/errors/unauthorized");
-                root->set("title", "Internal exception");
-                root->set("status", "401");
-                root->set("detail", "not authorized");
-                root->set("instance", "/auth");
-                std::ostream &ostr = response.send();
-                Poco::JSON::Stringifier::stringify(root, ostr);
-                return;
-            }
-            else if (hasSubstr(request.getURI(), "/search"))
-            {
-
-                std::string fn = form.get("first_name");
-                std::string ln = form.get("last_name");
-                auto results = database::User::search(fn, ln);
-                Poco::JSON::Array arr;
-                for (auto s : results)
-                    arr.add(remove_password(s.toJSON()));
-                response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-                response.setChunkedTransferEncoding(true);
-                response.setContentType("application/json");
-                std::ostream &ostr = response.send();
-                Poco::JSON::Stringifier::stringify(arr, ostr);
-
-                return;
-            }
-            else if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_POST)
-            {
-                if (form.has("first_name") && form.has("last_name") && form.has("email") && form.has("title") && form.has("login") && form.has("password"))
+                if (!check_id(cart.get_id_item(), reason))
                 {
-                    database::User user;
-                    user.first_name() = form.get("first_name");
-                    user.last_name() = form.get("last_name");
-                    user.email() = form.get("email");
-                    user.title() = form.get("title");
-                    user.login() = form.get("login");
-                    user.password() = form.get("password");
+                    check_result = false;
+                    message += reason;
+                    message += "<br>";
+                }
 
-                    bool check_result = true;
-                    std::string message;
-                    std::string reason;
+                if (check_result)
+                {
+                    database::Cart::remove_item(cart);
+                    response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+                    response.setChunkedTransferEncoding(true);
+                    response.setContentType("application/json");
+                    std::ostream &ostr = response.send();
+                    ostr << cart.get_id_cart();
+                    return;
+                }
 
-                    if (!check_name(user.get_first_name(), reason))
-                    {
-                        check_result = false;
-                        message += reason;
-                        message += "<br>";
-                    }
-
-                    if (!check_name(user.get_last_name(), reason))
-                    {
-                        check_result = false;
-                        message += reason;
-                        message += "<br>";
-                    }
-
-                    if (!check_email(user.get_email(), reason))
-                    {
-                        check_result = false;
-                        message += reason;
-                        message += "<br>";
-                    }
-
-                    if (check_result)
-                    {
-                        user.save_to_mysql();
-                        response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-                        response.setChunkedTransferEncoding(true);
-                        response.setContentType("application/json");
-                        std::ostream &ostr = response.send();
-                        ostr << user.get_id();
-                        return;
-                    }
-                    else
-                    {
-                        response.setStatus(Poco::Net::HTTPResponse::HTTP_NOT_FOUND);
-                        std::ostream &ostr = response.send();
-                        ostr << message;
-                        response.send();
-                        return;
-                    }
+                else
+                {
+                    response.setStatus(Poco::Net::HTTPResponse::HTTP_NOT_FOUND);
+                    std::ostream &ostr = response.send();
+                    ostr << message;
+                    response.send();
+                    return;
                 }
             }
         }
         catch (...)
         {
         }
-
         response.setStatus(Poco::Net::HTTPResponse::HTTPStatus::HTTP_NOT_FOUND);
         response.setChunkedTransferEncoding(true);
         response.setContentType("application/json");
@@ -281,7 +197,7 @@ public:
         root->set("title", "Internal exception");
         root->set("status", Poco::Net::HTTPResponse::HTTPStatus::HTTP_NOT_FOUND);
         root->set("detail", "request ot found");
-        root->set("instance", "/user");
+        root->set("instance", "/cart");
         std::ostream &ostr = response.send();
         Poco::JSON::Stringifier::stringify(root, ostr);
     }

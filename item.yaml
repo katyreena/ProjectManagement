@@ -4,77 +4,77 @@ info:
   title: 'Arch Lab API'
   description: Домашнее задание по курсу Архитектура программных систем
 servers:
-  - url: http://localhost:8080
-    description: User server
+  - url: http://localhost:8083
+    description: Item server
 paths:
-  /search:
+  /read_by_id:
     get:
-      summary: Поиск пользователей по маске имени и фамилии
+      summary: Чтение информации о товаре
       parameters:
-      - name: first_name
-        description: Имя
+      - name: id
+        description: Уникальный идентификатор товара
         in: query
         required: true
         schema:
-          type: string
-      - name: last_name
-        description: Фамилия
-        in: query
-        required: true
-        schema:
-          type: string
+          type: integer
       responses:
         '200':
-          description: The users for the provided masks
+          description: Найденный товар
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/users'
+                $ref: '#/components/schemas/item'
         404:
-          description: No user found for the provided mask
+          description: Товар не найден
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         500:
-          description: Unexpected error
+          description: Неожиданная ошибка
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /auth:
+  /read_all:
     get:
-      summary: Проверка аутентификации
+      summary: Вывод полного списка товаров
       responses:
         '200':
-          description: User ID
+          description: Полный список товаров
           content:
             application/json:
               schema:
-               type: string
-        401:
-          description: Not authentication
+                $ref: '#/components/schemas/items'
+        404:
+          description: Товары не найдены
           content:
             application/json:
               schema:
-                type: string
-  /user:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Неожиданная ошибка
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /search:
     get:
-      summary: Чтение информации о пользователе
+      summary: Поиск всех товаров из корзины пользователя по логину
       parameters:
-      - name: id
-        description: Уникальный идентификатор пользователя
+      - name: login
+        description: Логин пользователя
         in: query
         required: true
         schema:
-          $ref: '#/components/schemas/user_id'
+          type: string
       responses:
         '200':
-          description: Найденный пользователь
+          description: Товары найденны
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/user'
+                $ref: '#/components/schemas/items'
         404:
           description: Пользователь не найден
           content:
@@ -82,103 +82,39 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         500:
-          description: Неожиданная ошибка
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-    post:
-      summary: Добавление нового пользователя
-      parameters:
-      - name: first_name
-        description: Имя пользователя
-        in: query
-        required: true
-        schema:
-          type: string
-      - name: last_name
-        description: Фамилия пользователя
-        in: query
-        required: true
-        schema:
-          type: string
-      - name: email
-        description: email пользователя
-        in: query
-        required: true
-        schema:
-          type: string
-      - name: title
-        description: Форма обращение к пользователя 
-        in: query
-        required: true
-        schema:
-          type: string
-      - name: login
-        description: login пользователя
-        in: query
-        required: true
-        schema:
-          type: string
-      - name: password
-        description: пароль пользователя
-        in: query
-        required: true
-        schema:
-          type: string
-      responses:
-        '200':
-          description: Идентификатор, добавленного пользователя
-          content:
-            application/json:
-              schema:
-                type: integer
-        404:
-          description: Ошибка добавления пользователя
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        500:
-          description: Неожиданная ошибка
+          description: Непредвиденная ошибка
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 components:
   schemas:
-    user_id:
-      description: Уникальный идентификатор пользователя
-      type: integer
-    users:
+    items:
       type: array
       items:
-        $ref: '#/components/schemas/user'
-    user:
+        $ref: '#/components/schemas/item'
+    item:
       type: object
       required:
         - id
-        - first_name
-        - last_name
-        - email
-        - title
-        - login
-        - password
+        - name
+        - category
+        - description
+        - price
+        - availability
       properties:
         id:
-          $ref: '#/components/schemas/user_id'
-        first_name:
+          type: integer
+        name:
           type: string
-        last_name:
+        category:
           type: string
-        email:
+        description:
           type: string
-        title:
-          type: string
-        login:
-          type: string
-        password:
-          type: string
+        price:
+          type: number
+        availability:
+          type: boolean
     Error:
       type: object
       required:
