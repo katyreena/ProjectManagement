@@ -29,7 +29,6 @@ namespace database
                         << "`category` VARCHAR(256) NOT NULL,"
                         << "`description` VARCHAR(256) NOT NULL,"
                         << "`price` FLOAT NOT NULL,"
-                        << "`availability` BOOLEAN NOT NULL,"
                         << "PRIMARY KEY (`id`));",
                 now;
         }
@@ -54,7 +53,6 @@ namespace database
         root->set("category", _category);
         root->set("description", _description);
         root->set("price", _price);
-        root->set("availability", _availability);
         return root;
     }
 
@@ -69,7 +67,6 @@ namespace database
         item.category() = object->getValue<std::string>("category");
         item.description() = object->getValue<std::string>("description");
         item.price() = object->getValue<float>("price");
-        item.availability() = object->getValue<bool>("availability");
         return item;
     }
 
@@ -80,13 +77,12 @@ namespace database
             Poco::Data::Session session = database::Database::get().create_session();
             Poco::Data::Statement select(session);
             Item a;
-            select << "SELECT id, name, category, description, price, availability FROM Item where id=?",
+            select << "SELECT id, name, category, description, price FROM Item where id=?",
                 into(a._id),
                 into(a._name),
                 into(a._category),
                 into(a._description),
                 into(a._price),
-                into(a._availability),
                 use(id),
                 range(0, 1); //  iterate over result set one row at a time
 
@@ -114,13 +110,12 @@ namespace database
             Statement select(session);
             std::vector<Item> result;
             Item a;
-            select << "SELECT id, name, category, description, price, availability FROM Item",
+            select << "SELECT id, name, category, description, price FROM Item",
                 into(a._id),
                 into(a._name),
                 into(a._category),
                 into(a._description),
                 into(a._price),
-                into(a._availability),
                 range(0, 1); //  iterate over result set one row at a time
 
             while (!select.done())
@@ -149,12 +144,11 @@ namespace database
         {
             Poco::Data::Session session = database::Database::get().create_session();
             Poco::Data::Statement insert(session);
-            insert << "INSERT INTO Item (name,category,description,price,availability) VALUES(?, ?, ?, ?, ?)",
+            insert << "INSERT INTO Item (name,category,description,price) VALUES(?, ?, ?, ?)",
                 use(_name),
                 use(_category),
                 use(_description),
-                use(_price),
-                use(_availability);
+                use(_price);
 
             insert.execute();
             Poco::Data::Statement select(session);
@@ -188,13 +182,12 @@ namespace database
             Statement select(session);
             std::vector<Item> result;
             Item a;
-            select << "SELECT Item.id, name, category, description, price, availability FROM Item INNER JOIN Cart ON Item.id=Cart.id_item WHERE Cart.login=? GROUP BY Cart.id_item",
+            select << "SELECT Item.id, name, category, description, price FROM Item INNER JOIN Cart ON Item.id=Cart.id_item WHERE Cart.login=? GROUP BY Cart.id_item",
                 into(a._id),
                 into(a._name),
                 into(a._category),
                 into(a._description),
                 into(a._price),
-                into(a._availability),
                 use(login),
                 range(0, 1); //  iterate over result set one row at a time
 
@@ -244,11 +237,6 @@ namespace database
         return _price;
     }
 
-    const bool &Item::get_availability() const
-    {
-        return _availability;
-    }
-
     long &Item::id()
     {
         return _id;
@@ -272,11 +260,6 @@ namespace database
     float &Item::price()
     {
         return _price;
-    }
-
-    bool &Item::availability()
-    {
-        return _availability;
     }
 
 }

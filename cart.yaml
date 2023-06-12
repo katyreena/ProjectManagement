@@ -57,10 +57,6 @@ paths:
       responses:
         '200':
           description: Товар успешно удален из корзины
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/item'
         404:
           description: Корзина не найдена
           content:
@@ -75,28 +71,6 @@ paths:
                 $ref: '#/components/schemas/Error'
 components:
   schemas:
-    item:
-      type: object
-      required:
-        - id
-        - name
-        - category
-        - description
-        - price
-        - availability
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        category:
-          type: string
-        description:
-          type: string
-        price:
-          type: number
-        availability:
-          type: boolean
     Error:
       type: object
       required:

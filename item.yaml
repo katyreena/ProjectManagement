@@ -7,6 +7,53 @@ servers:
   - url: http://localhost:8083
     description: Item server
 paths:
+  /item:
+    post:
+      summary: Добавление нового типа товара
+      parameters:
+      - name: name
+        description: Название товара
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: category
+        description: Категория товара
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: description
+        description: Описание товара
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: price
+        description: Цена за единицу товара
+        in: query
+        required: true
+        schema:
+          type: number
+      responses:
+        '200':
+          description: Товар добавлен
+          content:
+            application/json:
+              schema:
+                type: integer
+        404:
+          description: Товар не добавлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Неожиданная ошибка
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /read_by_id:
     get:
       summary: Чтение информации о товаре
@@ -101,7 +148,6 @@ components:
         - category
         - description
         - price
-        - availability
       properties:
         id:
           type: integer
@@ -113,8 +159,6 @@ components:
           type: string
         price:
           type: number
-        availability:
-          type: boolean
     Error:
       type: object
       required:

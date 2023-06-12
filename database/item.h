@@ -15,7 +15,6 @@ namespace database
             std::string _category;
             std::string _description;
             float _price;
-            bool _availability;
 
         public:
             static Item fromJSON(const std::string & str);
@@ -25,14 +24,12 @@ namespace database
             const std::string &get_category() const;
             const std::string &get_description() const;
             const float &get_price() const;
-            const bool &get_availability() const;
 
             long&        id();
             std::string &name();
             std::string &category();
             std::string &description();
             float &price();
-            bool &availability();
 
             static void init();
             static std::optional<Item> read_by_id(long id);

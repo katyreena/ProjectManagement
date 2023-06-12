@@ -131,14 +131,13 @@ public:
             }
             else if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_POST)
             {
-                if (form.has("name") && form.has("category") && form.has("description") && form.has("price") && form.has("availability"))
+                if (form.has("name") && form.has("category") && form.has("description") && form.has("price"))
                 {
                     database::Item item;
                     item.name() = form.get("name");
                     item.category() = form.get("category");
                     item.description() = form.get("description");
                     item.price() = stof(form.get("price"));
-                    item.availability() = stoi(form.get("availability"));
                     item.save_to_mysql();
                     response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
                     response.setChunkedTransferEncoding(true);
