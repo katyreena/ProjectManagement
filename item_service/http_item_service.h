@@ -38,7 +38,7 @@ using Poco::Util::OptionSet;
 using Poco::Util::ServerApplication;
 
 #include "http_request_factory.h"
-#include "../database/user.h"
+#include "../database/item.h"
 
 class HTTPWebServer : public Poco::Util::ServerApplication
 {
@@ -68,7 +68,7 @@ protected:
         if (!_helpRequested)
         {
             database::User::init();
-            ServerSocket svs(Poco::Net::SocketAddress("0.0.0.0", 8080));
+            ServerSocket svs(Poco::Net::SocketAddress("0.0.0.0", 8083));
             HTTPServer srv(new HTTPRequestFactory(DateTimeFormat::SORTABLE_FORMAT), svs, new HTTPServerParams);
             srv.start();
             waitForTerminationRequest();
