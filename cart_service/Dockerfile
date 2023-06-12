@@ -6,4 +6,4 @@ RUN git clone -b master https://github.com/pocoproject/poco.git && cd poco && mk
 RUN git clone https://github.com/katyreena/ProjectManagement.git
 RUN sudo ldconfig
 RUN cd ProjectManagement && mkdir build && cd build && cmake  .. && make
-ENTRYPOINT [ "ProjectManagement/build/cart__service" ]
+ENTRYPOINT [ "ProjectManagement/build/cart_service" ]
